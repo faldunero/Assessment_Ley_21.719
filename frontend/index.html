@@ -304,6 +304,33 @@ table.heat td.hm-c{text-align:center;font-weight:700;font-size:12.5px;color:#1d2
 .hm-t{display:inline-block;width:14px;height:14px;border-radius:3px;cursor:default}
 
 details.acc>summary h3{margin:0;font-size:15px;color:var(--navy)}
+
+.bottom-nav{display:none}
+@media (max-width:760px){
+  nav#nav{display:none}
+  .bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;background:#0d1a2f;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));gap:4px;justify-content:space-around;z-index:45;box-shadow:0 -4px 14px rgba(0,0,0,.18)}
+  .bottom-nav button{background:none;color:#c9d3e6;border:0;font:inherit;font-size:11.5px;padding:7px 2px;flex:1;border-radius:8px;cursor:pointer}
+  .bottom-nav button.on{color:#fff;background:#1F3864}
+  main{padding:10px 10px 90px}
+  .toolbar{display:none}
+  .grid2,.grid3,.res-kpis,.grid-det{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .filtros{flex-direction:column;align-items:stretch}
+  .filtros select,.filtros input{min-width:0;width:100%}
+  .ov{padding:8px}
+  .av-card,.mdl{width:100%;max-height:96vh}
+  .av-head{padding:14px}
+  .av-body{padding:12px 14px}
+  .av-foot{padding:12px 14px}
+  .sh-foot-in{padding:14px 12px;font-size:12px}
+  h2{font-size:18px}
+  .sem-circ{width:48px;height:48px;flex-basis:48px}
+  .sem-t{font-size:17px}
+}
+.mas-lista{display:flex;flex-direction:column;gap:8px}
+.mas-op{text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;cursor:pointer;font:inherit}
+.mas-op b{color:var(--navy);font-size:15px}
+.mas-op span{font-size:13px}
 </style>
 </head>
 <body>
@@ -334,6 +361,7 @@ details.acc>summary h3{margin:0;font-size:15px;color:var(--navy)}
     <div class="sh-copy">© 2026 ShellTI. Todos los derechos reservados.</div>
   </div>
 </footer>
+<nav class="bottom-nav" id="navm" aria-label="Navegación móvil"></nav>
 <script>
 /* ============================================================
    DATOS SEMILLA (generados desde checklist_ley21719_integrado.xlsx)
@@ -1883,7 +1911,20 @@ function entrarModoAdmin(){ MODO='admin'; ADMV='solicitudes'; renderNav(); rende
 function salirModoAdmin(){ MODO='acceso'; ADM=false; vista='registro'; renderNav(); render(); }
 function cerrarSesionApp(){ MODO='acceso'; EXP=null; ED=null; vista='registro'; renderNav(); render(); }
 function irAdmin(v){ ADMV=v; renderNav(); render(); }
-function renderNav(){
+function esMovil(){ return !!(window.matchMedia && window.matchMedia('(max-width:760px)').matches); }
+const MOVIL_VISTAS=['resumen','entrevistas','controles','datos','mas','emergencia','referencias','ayuda'];
+const MOVIL_APP=[['resumen','Resumen'],['entrevistas','Entrevistas'],['controles','Controles'],['datos','RAT'],['mas','Más']];
+function renderNavBarraMovil(){
+  const el=document.getElementById('navm'); if(!el) return;
+  let items, fn;
+  if(MODO==='acceso'){ items=NAV_ACCESO; fn=(k)=>`ir('${k}')`; }
+  else if(MODO==='admin'){ items=NAV_ADMIN; fn=(k)=>`irAdmin('${k}')`; }
+  else { items=MOVIL_APP; fn=(k)=>`ir('${k}')`; }
+  const actual = MODO==='admin'? ADMV : vista;
+  el.innerHTML = items.map(([k,t])=>`<button class="${actual===k?'on':''}" onclick="${fn(k)}">${esc(t)}</button>`).join('');
+}
+function renderNav(){ renderNavBase(); renderNavBarraMovil(); }
+function renderNavBase(){
   let html='';
   if(MODO==='acceso'){
     html = `<div class="nav-g">Acceso a la plataforma</div>` + NAV_ACCESO.map(([k,t])=>`<button class="${vista===k?'on':''}" onclick="ir('${k}')">${esc(t)}</button>`).join('')
@@ -1904,7 +1945,15 @@ function renderNav(){
   $('#nav').innerHTML = html;
 }
 function ir(v){ vista=v; if(v!=='entrevistas') ED=null; renderNav(); render(); }
+TITULOS.mas=['Más','Opciones'];
 function render(){
+  if(MODO==='app' && esMovil()){
+    if(!MOVIL_VISTAS.includes(vista)) vista='resumen';
+    if(vista==='datos') tablaActiva='rat';
+  }
+  renderBase();
+}
+function renderBase(){
   C=calcular();
   let main='', crumb='';
   if(MODO==='acceso'){
@@ -1918,7 +1967,7 @@ function render(){
     crumb='Administración de plataforma / '+({solicitudes:'Solicitudes',empresas:'Empresas y accesos',correos:'Correos enviados',config:'Configuración'}[ADMV]);
     try{ main = vAdminSeccion(); }catch(e){ console.error(e); main=`<div class="warn">No se pudo mostrar esta sección: ${esc(e.message)}</div>`; }
   } else {
-    const m={resumen:vResumen,inicio:vInicio,dashboard:vDashboard,diagnostico:vDiagnostico,requisitos:vRequisitos,controles:vControles,entrevistas:vEntrevistasV2,datos:vDatos,ayuda:vAyudaV2,referencias:vReferencias,emergencia:vEmergencia}[vista];
+    const m={mas:vMas,resumen:vResumen,inicio:vInicio,dashboard:vDashboard,diagnostico:vDiagnostico,requisitos:vRequisitos,controles:vControles,entrevistas:vEntrevistasV2,datos:vDatos,ayuda:vAyudaV2,referencias:vReferencias,emergencia:vEmergencia}[vista];
     const t=TITULOS[vista]||['',''];
     crumb=t[0]+' / '+t[1];
     const act=empresaActiva();
@@ -1940,6 +1989,20 @@ function render(){
   $('#hdrOrg').textContent = MODO==='app' && act ? act.nombre + (S.meta.org? ', '+S.meta.org : '') : (MODO==='admin'? 'Administración de plataforma' : 'Acceso');
 }
 
+function vMas(){
+  const opc=(on,titulo,texto)=>`<button class="mas-op" onclick="${on}"><b>${esc(titulo)}</b><span class="muted">${esc(texto)}</span></button>`;
+  return `<h2>Más opciones</h2>
+  <div class="mas-lista">
+    ${opc("ir('emergencia')","Emergencia de datos","Qué hacer ante un incidente con datos personales")}
+    ${opc("ir('referencias')","Marcos y leyes","Consulta de normas y enlaces oficiales")}
+    ${opc("ir('ayuda')","Ayuda","Cómo usar la plataforma")}
+    ${opc("exportar()","Exportar datos","Guardar una copia de respaldo (JSON)")}
+    ${opc("importar()","Importar datos","Cargar una copia de respaldo")}
+    ${opc("cerrarSesionApp()","Cambiar de empresa","Volver a la pantalla de acceso")}
+  </div>`;
+}
+let ULTIMO_MOVIL=null;
+window.addEventListener('resize',()=>{ const m=esMovil(); if(m!==ULTIMO_MOVIL){ ULTIMO_MOVIL=m; renderNav(); render(); } });
 /* ----- Inicio ----- */
 function vInicio(){
   const m=S.meta;
