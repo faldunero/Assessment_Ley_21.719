@@ -291,10 +291,15 @@ table.matriz th.mx-f{width:150px;font-size:12px;background:#eef2f9;color:var(--n
 table.matriz td.mx-c{vertical-align:top;min-height:70px;font-size:12.5px;line-height:1.4;border:2px solid #fff}
 .mx-d{margin-bottom:4px}
 
-table.heat{table-layout:fixed;min-width:820px}
-table.heat th.hm-h{font-size:11px;text-align:center;background:#eef2f9;color:var(--navy);padding:6px 4px;line-height:1.25}
-table.heat th.hm-r{font-size:12px;text-align:left;background:#f5f7fb;color:var(--navy);width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:6px 8px}
-table.heat td.hm-c{text-align:center;font-weight:700;font-size:12.5px;color:#1d2433;border:2px solid #fff;height:34px}
+.hm-scroll{overflow-x:auto}
+table.heat{width:100%;min-width:980px;table-layout:fixed;border-collapse:separate;border-spacing:0}
+table.heat col.hm-col-r{width:240px}
+table.heat col.hm-col-c{width:auto}
+table.heat th.hm-corner{background:var(--navy);color:#fff;font-size:12px;text-align:left;padding:8px 10px;position:sticky;left:0;z-index:2}
+table.heat th.hm-h{font-size:11.5px;text-align:center;background:#eef2f9;color:var(--navy);padding:8px 4px;line-height:1.25;white-space:normal;word-break:break-word}
+table.heat th.hm-r{font-size:12.5px;text-align:left;background:#f5f7fb;color:var(--navy);padding:6px 10px;white-space:normal;line-height:1.3;position:sticky;left:0;z-index:1;border-right:1px solid var(--line)}
+table.heat th.hm-r .hm-cod{display:inline-block;min-width:34px;font-weight:700}
+table.heat td.hm-c{text-align:center;font-weight:700;font-size:13px;color:#1d2433;border:2px solid #fff;height:38px;padding:0}
 .hm-leyenda{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin:6px 0 10px}
 .hm-escala{display:inline-block;width:180px;height:12px;border-radius:6px;background:linear-gradient(90deg,rgb(224,102,102),rgb(255,217,102),rgb(106,168,79))}
 .hm-detalle{display:flex;flex-direction:column;gap:6px}
@@ -302,35 +307,6 @@ table.heat td.hm-c{text-align:center;font-weight:700;font-size:12.5px;color:#1d2
 .hm-et{width:44px;font-size:12px;font-weight:700;color:var(--navy);flex:0 0 44px}
 .hm-tiles{display:flex;flex-wrap:wrap;gap:3px}
 .hm-t{display:inline-block;width:14px;height:14px;border-radius:3px;cursor:default}
-
-details.acc>summary h3{margin:0;font-size:15px;color:var(--navy)}
-
-.bottom-nav{display:none}
-@media (max-width:760px){
-  nav#nav{display:none}
-  .bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;background:#0d1a2f;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));gap:4px;justify-content:space-around;z-index:45;box-shadow:0 -4px 14px rgba(0,0,0,.18)}
-  .bottom-nav button{background:none;color:#c9d3e6;border:0;font:inherit;font-size:11.5px;padding:7px 2px;flex:1;border-radius:8px;cursor:pointer}
-  .bottom-nav button.on{color:#fff;background:#1F3864}
-  main{padding:10px 10px 90px}
-  .toolbar{display:none}
-  .grid2,.grid3,.res-kpis,.grid-det{grid-template-columns:1fr}
-  .kpis{grid-template-columns:1fr 1fr}
-  .filtros{flex-direction:column;align-items:stretch}
-  .filtros select,.filtros input{min-width:0;width:100%}
-  .ov{padding:8px}
-  .av-card,.mdl{width:100%;max-height:96vh}
-  .av-head{padding:14px}
-  .av-body{padding:12px 14px}
-  .av-foot{padding:12px 14px}
-  .sh-foot-in{padding:14px 12px;font-size:12px}
-  h2{font-size:18px}
-  .sem-circ{width:48px;height:48px;flex-basis:48px}
-  .sem-t{font-size:17px}
-}
-.mas-lista{display:flex;flex-direction:column;gap:8px}
-.mas-op{text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;cursor:pointer;font:inherit}
-.mas-op b{color:var(--navy);font-size:15px}
-.mas-op span{font-size:13px}
 </style>
 </head>
 <body>
@@ -1820,6 +1796,8 @@ function matrizPriorizacionHTML(){
 }
 
 /* ===== Mapa de calor: dimensión x fuente y detalle por requisito ===== */
+const DIM_CORTA={D1:'Gobierno',D2:'Inventario y RAT',D3:'Licitud y consentimiento',D4:'Derechos ARCOP',D5:'Principios y retención',D6:'Datos sensibles y menores',D7:'Evaluación de impacto',D8:'Seguridad de la información',D9:'Incidentes y continuidad',D10:'Proveedores y transferencias',D11:'Capacitación y phishing',D12:'Auditoría y mejora',D13:'Marcos de referencia',D14:'Seguridad física',D15:'Infraestructura y bases de datos',D16:'Gobierno de TI',D17:'Recursos humanos',D18:'Clientes y marketing'};
+const FUENTE_CORTA={'Ley 21.719':'Ley 21.719','ISO/IEC 27001:2022':'ISO 27001','NIST CSF 2.0':'NIST CSF','CIS v8.1':'CIS','COBIT 5':'COBIT','PCI DSS v4.0.1':'PCI DSS','Normativa chilena':'Normativa','Indicador interno':'Indicador','Buena práctica':'Buena práctica'};
 function colorPuntaje(x){
   if(x==null) return '#e6e9f0';
   const stops=[[1,[224,102,102]],[3,[255,217,102]],[5,[106,168,79]]];
@@ -1831,16 +1809,16 @@ function colorPuntaje(x){
   return `rgb(${c[0]},${c[1]},${c[2]})`;
 }
 function mapaCalorHTML(){
-  const fuentesCols=['Ley 21.719','ISO/IEC 27001:2022','NIST CSF 2.0','CIS v8.1','COBIT 5','PCI DSS v4.0.1','Normativa chilena','Indicador interno','Buena práctica'];
+  const fuentesCols=Object.keys(FUENTE_CORTA);
   const incl=S.reqs.filter(q=>q.incluir);
   const celda=(dim,f)=>{
     const vals=incl.filter(q=>q.dim===dim && fuentesReq(q).includes(f) && C.req[q.id]!=null).map(q=>C.req[q.id]);
     return vals.length? promedio(vals) : null;
   };
-  const cab=fuentesCols.map(f=>`<th class="hm-h" title="${esc(f)}">${esc(f.replace('/IEC 27001:2022','').replace(' v4.0.1','').replace(' 2.0','').replace(' 21.719','').replace('Indicador interno','Indicador'))}</th>`).join('');
+  const cab=fuentesCols.map(f=>`<th class="hm-h" title="${esc(f)}">${esc(FUENTE_CORTA[f])}</th>`).join('');
   const filasDim=S.dims.map(d=>{
     const celdas=fuentesCols.map(f=>{ const v=celda(d.codigo,f); return `<td class="hm-c" style="background:${colorPuntaje(v)}" title="${esc(d.codigo+' · '+f+': '+(v==null?'sin evaluar':v.toFixed(2)))}">${v==null?'':v.toFixed(1)}</td>`; }).join('');
-    return `<tr><th class="hm-r" title="${esc(d.nombre)}">${esc(d.codigo)} ${esc(d.nombre.length>34? d.nombre.slice(0,34)+'...' : d.nombre)}</th>${celdas}</tr>`;
+    return `<tr><th class="hm-r" title="${esc(d.codigo+' · '+d.nombre)}"><span class="hm-cod">${esc(d.codigo)}</span> ${esc(DIM_CORTA[d.codigo]||d.nombre)}</th>${celdas}</tr>`;
   }).join('');
   const detalle=S.dims.map(d=>{
     const reqs=S.reqs.filter(q=>q.dim===d.codigo && q.incluir);
@@ -1851,8 +1829,9 @@ function mapaCalorHTML(){
   return `<div class="card"><h3>Mapa de calor</h3>
     <p class="muted">Muestra dónde la organización cumple y dónde no. Rojo indica puntaje bajo (cerca de 1), amarillo intermedio y verde alto (cerca de 5). Cada celda de la primera tabla es el promedio de los requisitos incluidos de esa dimensión que se apoyan en esa fuente.</p>
     ${leyenda}
-    <div class="scroll"><table class="heat">
-      <tr><th></th>${cab}</tr>${filasDim}
+    <div class="scroll hm-scroll"><table class="heat">
+      <colgroup><col class="hm-col-r">${fuentesCols.map(()=>'<col class="hm-col-c">').join('')}</colgroup>
+      <tr><th class="hm-corner">Dimensión</th>${cab}</tr>${filasDim}
     </table></div>
     <h4 style="margin:16px 0 6px">Detalle por requisito</h4>
     <p class="muted" style="font-size:12.5px">Cada cuadro es un requisito incluido. Pase el mouse para ver su código y su puntaje.</p>
