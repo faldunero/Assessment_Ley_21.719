@@ -307,6 +307,35 @@ table.heat td.hm-c{text-align:center;font-weight:700;font-size:13px;color:#1d243
 .hm-et{width:44px;font-size:12px;font-weight:700;color:var(--navy);flex:0 0 44px}
 .hm-tiles{display:flex;flex-wrap:wrap;gap:3px}
 .hm-t{display:inline-block;width:14px;height:14px;border-radius:3px;cursor:default}
+.bottom-nav{display:none}
+.mas-lista{display:flex;flex-direction:column;gap:8px}
+.mas-op{text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;cursor:pointer;font:inherit}
+.mas-op b{color:var(--navy);font-size:15px}
+.mas-op span{font-size:13px}
+@media (max-width:760px){
+  nav#nav{display:none}
+  .bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;top:auto;height:auto;align-self:auto;overflow:visible;max-width:100vw;background:#0d1a2f;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));gap:4px;justify-content:space-around;z-index:45;box-shadow:0 -4px 14px rgba(0,0,0,.18)}
+  .bottom-nav button{background:none;color:#c9d3e6;border:0;font:inherit;font-size:11.5px;padding:7px 2px;flex:1;border-radius:8px;cursor:pointer;min-height:44px;white-space:normal;line-height:1.2}
+  .bottom-nav button.on{color:#fff;background:#1F3864}
+  html,body{overflow-x:hidden;max-width:100%}
+  body{display:block;min-height:0}
+  .wrap{display:block;width:100%}
+  main{padding:10px 10px 90px;width:100%;max-width:100%;box-sizing:border-box}
+  .toolbar{display:none}
+  .grid2,.grid3,.res-kpis,.grid-det{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+  .filtros{flex-direction:column;align-items:stretch}
+  .filtros select,.filtros input{min-width:0;width:100%}
+  .ov{padding:8px}
+  .av-card,.mdl{width:100%;max-height:96vh}
+  .av-head{padding:14px}
+  .av-body{padding:12px 14px}
+  .av-foot{padding:12px 14px}
+  .sh-foot-in{padding:14px 12px;font-size:12px}
+  h2{font-size:18px}
+  .sem-circ{width:48px;height:48px;flex-basis:48px}
+  .sem-t{font-size:17px}
+}
 </style>
 </head>
 <body>
