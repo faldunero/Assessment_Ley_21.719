@@ -372,6 +372,19 @@ header.hdr{background:#fff;color:#1F3864;border-bottom:1px solid #d0d7e2;padding
 .hdr-usr .hdr-cargo{color:#5b6575}
 .hdr-logo{background:none;padding:0;border-radius:0;height:40px}
 @media (max-width:760px){ .hdr-logo{height:30px} header.hdr{padding:10px 14px} }
+.av-total{margin:8px 0 12px;font-size:14px}
+.av-lista{display:flex;flex-direction:column;gap:8px}
+.av-fila{display:grid;grid-template-columns:minmax(180px,1fr) 2fr 52px minmax(150px,auto);gap:12px;align-items:center;font-size:13px}
+.av-n{color:var(--navy)} .av-n b{margin-right:4px}
+.av-bar{height:10px;background:#e6e9f0;border-radius:6px;overflow:hidden}
+.av-bar span{display:block;height:100%;border-radius:6px}
+.av-p{font-weight:700;text-align:right}
+.av-t{color:var(--muted);font-size:12.5px}
+.hallazgos{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.hallazgos li{font-size:14px;line-height:1.5}
+.nivel{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px;margin-right:6px;color:#fff}
+.n-Alta{background:#C62828} .n-Media{background:#F9A825;color:#1d2433} .n-Baja{background:#5b6575} .n-Ok{background:#2E7D32}
+@media (max-width:760px){ .av-fila{grid-template-columns:1fr 1fr;gap:6px} .av-bar{grid-column:1/-1} }
 </style>
 </head>
 <body>
@@ -434,6 +447,7 @@ function migrar(g){
   if(!g) return base;
   base.entrevistas = Array.isArray(g.entrevistas)? g.entrevistas : [];
   base.historial = Array.isArray(g.historial)? g.historial : [];
+  base.sistemas = Array.isArray(g.sistemas)? g.sistemas : [];
   base.registros = Array.isArray(g.registros) ? g.registros : [];
   base.meta = Object.assign(base.meta, g.meta||{});
   const incl = {}; (g.reqs||[]).forEach(q=>{ incl[q.id]=q.incluir; });
@@ -533,7 +547,7 @@ function calcular(){
 let S=null, C=null, vista='inicio', filtroReq={dim:'',txt:''}, prefill={}, tablaActiva='rat';
 const NAV=[
  ['Inicio',[['inicio','Datos y aceptación']]],
- ['Levantamiento',[['datos','Actividades, ARCOP y transferencias']]],
+ ['Levantamiento',[['datos','Actividades, ARCOP y transferencias'],['sistemas','Sistemas y accesos']]],
  ['Acceso',[['registro','Solicitar acceso'],['ingresar','Ingresar'],['admin','Administración']]],
  ['Evaluación',[['entrevistas','Entrevistas'],['controles','Controles marcos'],['requisitos','Requisitos Ley']]],
  ['Resultados',[['resumen','Resumen ejecutivo'],['diagnostico','Scoring y diagnóstico'],['dashboard','Dashboard']]],
@@ -1738,6 +1752,8 @@ function vResumen(){
         <div class="sem-n">${esc(d.nombre)}</div></div></div>`).join('')}</div>
     </div>
 
+    ${avanceDimsHTML()}
+    ${hallazgosHTML()}
     ${bloqueHistorialHTML()}
     <div class="card"><h3>Próximos pasos sugeridos</h3>
       <ol>${pasos.map(p=>`<li>${esc(p)}</li>`).join('')}</ol>
@@ -1958,6 +1974,126 @@ function usuarioHTML(){
   const u=usuarioActivo(); if(!u) return '';
   return `<span class="hdr-sem" style="background:${u.color}" title="Sesión ${esc(ESTADO_EMP[u.estado]||u.estado)}"></span><span class="hdr-nom">${esc(u.nombre)}</span>${u.cargo? `<span class="hdr-cargo">${esc(u.cargo)}</span>` : ''}`;
 }
+/* ===== Avance del levantamiento por dimensión ===== */
+function avanceDimsHTML(){
+  const tot=C.dims.reduce((a,d)=>a+d.incluidos,0), ev=C.dims.reduce((a,d)=>a+d.evaluados,0);
+  const pct=tot? Math.round(ev/tot*100):0;
+  const filas=C.dims.map(d=>{
+    const p=d.incluidos? Math.round(d.evaluados/d.incluidos*100):0;
+    const falta=d.incluidos-d.evaluados;
+    const col=p>=100?'#2E7D32':(p>=50?'#F9A825':'#C62828');
+    return `<div class="av-fila">
+      <div class="av-n"><b>${d.codigo}</b> ${esc(DIM_CORTA[d.codigo]||d.nombre)}</div>
+      <div class="av-bar" title="${p}%"><span style="width:${p}%;background:${col}"></span></div>
+      <div class="av-p">${p}%</div>
+      <div class="av-t">${d.evaluados} de ${d.incluidos}${falta>0? ' · faltan '+falta : ' · completa'}</div></div>`;
+  }).join('');
+  return `<div class="card"><h3>Avance del levantamiento</h3>
+    <p class="muted">Cuántos requisitos incluidos ya tienen puntaje en cada dimensión. Verde: completa. Amarillo: avance parcial. Rojo: poco avance.</p>
+    <div class="av-total"><b>${pct}%</b> del levantamiento completado (${ev} de ${tot} requisitos incluidos)</div>
+    <div class="av-lista">${filas}</div></div>`;
+}
+
+/* ===== Inventario de sistemas y accesos ===== */
+const TIPOS_SISTEMA=['Nominativo','Genérico','Mixto','Sin identificar'];
+function indicadoresSistemas(){
+  const L=S.sistemas||[]; const n=L.length;
+  const por=(t)=>L.filter(s=>s.tipo===t).length;
+  const gen=(s)=> s.tipo==='Genérico'||s.tipo==='Mixto';
+  const cli=L.filter(s=>s.clientes==='Sí');
+  const sens=L.filter(s=>s.sensibles==='Sí');
+  return {n, nom:por('Nominativo'), gen:por('Genérico'), mix:por('Mixto'), sinId:por('Sin identificar'),
+    pctNom: n? Math.round(por('Nominativo')/n*100) : 0,
+    clientes: cli.length, genClientes: cli.filter(gen).length, sensGen: sens.filter(gen).length,
+    sinResp: L.filter(s=>!(s.responsable||'').trim()).length};
+}
+function hallazgosSistemas(){
+  const I=indicadoresSistemas(); const h=[];
+  if(!I.n) return [{nivel:'Ok', t:'Aún no hay sistemas registrados.'}];
+  if(I.sensGen) h.push({nivel:'Alta', t:`${I.sensGen} sistema(s) con datos sensibles usan cuentas genéricas o mixtas. Revisar identidad individual y mínimo privilegio (controles de acceso, dimensión D8).`});
+  if(I.genClientes) h.push({nivel:'Media', t:`${I.genClientes} sistema(s) con datos de clientes usan cuentas genéricas o mixtas. Sin cuenta individual no se puede saber quién accedió, lo que afecta la trazabilidad y la atención de derechos ARCOP.`});
+  if(I.sinId) h.push({nivel:'Media', t:`${I.sinId} sistema(s) no tienen usuario identificado. Completar el responsable o la cuenta de acceso.`});
+  if(I.sinResp) h.push({nivel:'Baja', t:`${I.sinResp} sistema(s) no tienen responsable asignado.`});
+  if(!h.length) h.push({nivel:'Ok', t:'Sin hallazgos críticos en el inventario de sistemas.'});
+  return h;
+}
+function hallazgosHTML(){
+  return `<div class="card"><h3>Hallazgos del inventario de sistemas</h3>
+    <ul class="hallazgos">${hallazgosSistemas().map(x=>`<li><span class="nivel n-${x.nivel}">${x.nivel}</span> ${esc(x.t)}</li>`).join('')}</ul>
+    <p class="muted" style="font-size:12px">Ver el detalle y registrar sistemas en Sistemas y accesos.</p></div>`;
+}
+function vSistemas(){
+  const L=S.sistemas||[]; const I=indicadoresSistemas();
+  const filas=L.map((s,i)=>`<tr><td>${esc(s.nombre)}</td><td>${esc(s.tipo)}</td><td>${esc(s.clientes)}</td><td>${esc(s.sensibles)}</td><td>${esc(s.responsable||'s/d')}</td><td>${esc(s.cuenta||'')}</td><td><button class="btn sm dang" onclick="quitarSistema(${i})">Quitar</button></td></tr>`).join('');
+  return `<h2>Sistemas y accesos</h2>
+  <p class="muted">Inventario de los sistemas que tratan datos personales, con el tipo de usuario con que se accede. Alimenta los hallazgos del Resumen.</p>
+  <div class="grid2">
+    <div class="card"><h3>Agregar sistema</h3>
+      <div class="filtros" style="flex-direction:column;align-items:stretch">
+        <label class="f">Nombre del sistema<input id="sNom" placeholder="Ej.: Control de horarios"></label>
+        <label class="f">Tipo de usuario<select id="sTipo">${TIPOS_SISTEMA.map(x=>`<option>${x}</option>`).join('')}</select></label>
+        <label class="f">Trata datos de clientes<select id="sCli"><option>No</option><option>Sí</option></select></label>
+        <label class="f">Trata datos sensibles<select id="sSens"><option>No</option><option>Sí</option></select></label>
+        <label class="f">Responsable (cargo)<input id="sResp" placeholder="Ej.: Gerente de TI"></label>
+        <label class="f">Cuenta o alias de acceso<input id="sCuenta" placeholder="Ej.: cuenta compartida admin"></label>
+        <div class="row"><button class="btn" onclick="agregarSistema()">Agregar</button>
+          <label class="btn sec" style="cursor:pointer">Importar CSV<input type="file" accept=".csv,text/csv" onchange="importarSistemasCSV(this)" style="display:none"></label></div>
+        <p class="muted" style="font-size:12px">CSV con columnas: nombre;tipo;clientes;sensibles;responsable;cuenta. Tipo: Nominativo, Genérico, Mixto o Sin identificar. Se puede guardar como CSV desde Excel.</p>
+      </div></div>
+    <div class="card"><h3>Indicadores</h3>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Sistemas</div><div class="v">${I.n}</div></div>
+        <div class="kpi"><div class="l">Nominativos</div><div class="v">${I.pctNom}%</div></div>
+        <div class="kpi"><div class="l">Genéricos o mixtos</div><div class="v">${I.gen+I.mix}</div></div>
+        <div class="kpi"><div class="l">Con datos de clientes</div><div class="v">${I.clientes}</div></div>
+      </div>
+      ${hallazgosHTML().replace(/<div class="card">|<\/div>$/g,'').replace('<h3>Hallazgos del inventario de sistemas</h3>','<h4>Hallazgos</h4>')}
+    </div></div>
+  <div class="card"><h3>Inventario</h3>
+    ${L.length? `<div class="scroll"><table><tr><th>Sistema</th><th>Tipo de usuario</th><th>Datos de clientes</th><th>Sensibles</th><th>Responsable</th><th>Cuenta</th><th></th></tr>${filas}</table></div>` : '<p class="muted">Sin sistemas registrados.</p>'}
+  </div>`;
+}
+async function agregarSistema(){
+  const nombre=(document.getElementById('sNom').value||'').trim();
+  if(!nombre){ alert('Escriba el nombre del sistema.'); return; }
+  S.sistemas=(S.sistemas||[]).concat([{nombre,
+    tipo:document.getElementById('sTipo').value,
+    clientes:document.getElementById('sCli').value,
+    sensibles:document.getElementById('sSens').value,
+    responsable:document.getElementById('sResp').value.trim(),
+    cuenta:document.getElementById('sCuenta').value.trim()}]);
+  await persistir(); render();
+}
+async function quitarSistema(i){
+  if(!confirm('¿Quitar este sistema del inventario?')) return;
+  S.sistemas=S.sistemas.filter((_,k)=>k!==i); await persistir(); render();
+}
+function normTipo(x){ const v=(x||'').toLowerCase();
+  if(v.startsWith('nomin')) return 'Nominativo'; if(v.startsWith('gen')) return 'Genérico';
+  if(v.startsWith('mix')) return 'Mixto'; return 'Sin identificar'; }
+function normSI(x){ return /^s/i.test((x||'').trim())? 'Sí' : 'No'; }
+async function importarSistemasCSV(inp){
+  const f=inp.files[0]; if(!f) return;
+  const filas=(await f.text()).split(/\r?\n/).filter(l=>l.trim());
+  if(!filas.length){ alert('El archivo está vacío.'); return; }
+  const sep=filas[0].includes(';')?';':',';
+  const cab=filas[0].split(sep).map(x=>x.trim().toLowerCase());
+  const conCab=cab.includes('nombre');
+  const datos=conCab? filas.slice(1) : filas;
+  const nuevos=[];
+  for(const l of datos){
+    const c=l.split(sep).map(x=>x.trim());
+    const get=(k,pos)=>{ const i=conCab? cab.indexOf(k) : pos; return (i>=0 && c[i]!==undefined)? c[i] : ''; };
+    const nombre=get('nombre',0); if(!nombre) continue;
+    nuevos.push({nombre, tipo:normTipo(get('tipo',1)), clientes:normSI(get('clientes',2)),
+      sensibles:normSI(get('sensibles',3)), responsable:get('responsable',4), cuenta:get('cuenta',5)});
+  }
+  if(!nuevos.length){ alert('No se encontraron sistemas en el archivo.'); return; }
+  S.sistemas=(S.sistemas||[]).concat(nuevos);
+  await persistir(); render();
+  alert(`Se importaron ${nuevos.length} sistema(s).`);
+}
+
 async function init(){
   cargarG();
   S = await API.cargar(); MODO='acceso'; vista='registro';
@@ -1979,7 +2115,7 @@ function salirModoAdmin(){ MODO='acceso'; ADM=false; vista='registro'; renderNav
 function cerrarSesionApp(){ MODO='acceso'; EXP=null; ED=null; vista='registro'; renderNav(); render(); }
 function irAdmin(v){ ADMV=v; renderNav(); render(); }
 function esMovil(){ return !!(window.matchMedia && window.matchMedia('(max-width:760px)').matches); }
-const MOVIL_VISTAS=['resumen','entrevistas','controles','datos','mas','emergencia','referencias','ayuda'];
+const MOVIL_VISTAS=['resumen','entrevistas','controles','datos','sistemas','mas','emergencia','referencias','ayuda'];
 const MOVIL_APP=[['resumen','Resumen'],['entrevistas','Entrevistas'],['controles','Controles'],['datos','RAT'],['mas','Más']];
 function renderNavBarraMovil(){
   const el=document.getElementById('navm'); if(!el) return;
@@ -2034,7 +2170,7 @@ function renderBase(){
     crumb='Administración de plataforma / '+({solicitudes:'Solicitudes',empresas:'Empresas y accesos',correos:'Correos enviados',config:'Configuración'}[ADMV]);
     try{ main = vAdminSeccion(); }catch(e){ console.error(e); main=`<div class="warn">No se pudo mostrar esta sección: ${esc(e.message)}</div>`; }
   } else {
-    const m={mas:vMas,resumen:vResumen,inicio:vInicio,dashboard:vDashboard,diagnostico:vDiagnostico,requisitos:vRequisitos,controles:vControles,entrevistas:vEntrevistasV2,datos:vDatos,ayuda:vAyudaV2,referencias:vReferencias,emergencia:vEmergencia}[vista];
+    const m={sistemas:vSistemas,mas:vMas,resumen:vResumen,inicio:vInicio,dashboard:vDashboard,diagnostico:vDiagnostico,requisitos:vRequisitos,controles:vControles,entrevistas:vEntrevistasV2,datos:vDatos,ayuda:vAyudaV2,referencias:vReferencias,emergencia:vEmergencia}[vista];
     const t=TITULOS[vista]||['',''];
     crumb=t[0]+' / '+t[1];
     const act=empresaActiva();
@@ -2060,6 +2196,7 @@ function vMas(){
   const opc=(on,titulo,texto)=>`<button class="mas-op" onclick="${on}"><b>${esc(titulo)}</b><span class="muted">${esc(texto)}</span></button>`;
   return `<h2>Más opciones</h2>
   <div class="mas-lista">
+    ${opc("ir('sistemas')","Sistemas y accesos","Inventario de sistemas con datos personales")}
     ${opc("ir('emergencia')","Emergencia de datos","Qué hacer ante un incidente con datos personales")}
     ${opc("ir('referencias')","Marcos y leyes","Consulta de normas y enlaces oficiales")}
     ${opc("ir('ayuda')","Ayuda","Cómo usar la plataforma")}
@@ -2229,6 +2366,7 @@ function vRequisitos(){
       ${S.dims.map(d=>`<option value="${d.codigo}" ${filtroReq.dim===d.codigo?'selected':''}>${d.codigo}, ${esc(d.nombre)}</option>`).join('')}</select></label>
     <label class="f" style="flex:1;min-width:220px">Buscar<input placeholder="ID o palabra del requisito" value="${esc(filtroReq.txt||'')}" oninput="filtroReq.txt=this.value;pintarReq()"></label>
   </div>
+  ${avanceDimsHTML()}
   <div id="reqTabla">${tablaReq()}</div>`;
 }
 
