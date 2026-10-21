@@ -2704,7 +2704,7 @@ function exportar(){
 }
 function importar(){
   const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
-  inp.onchange=async()=>{ const txt=await inp.files[0].text(); try{ S=JSON.parse(txt); await persistir(); render(); alert('Datos importados.'); }catch(e){ alert('Archivo no válido.'); } };
+  inp.onchange=async()=>{ let datos; try{ datos=JSON.parse(await inp.files[0].text()); }catch(e){ alert('Archivo no válido: no es un JSON.'); return; } if(!datos || typeof datos!=='object' || (!datos.tables && !datos.registros && !datos.entrevistas && !datos.meta)){ alert('Archivo no válido: no contiene datos del assessment.'); return; } try{ S=migrar(datos); if(!S.entrevistas) S.entrevistas=[]; if(!S.historial) S.historial=[]; await persistir(); render(); alert('Datos importados.'); }catch(e){ console.error(e); alert('No se pudieron importar los datos: '+e.message); } };
   inp.click();
 }
 async function reiniciar(){ if(!confirm('Esto borra los datos guardados en este navegador. ¿Continuar?')) return; try{localStorage.removeItem(claveAssessment());}catch(e){} S=JSON.parse(JSON.stringify(SEED)); S.registros=[]; S.entrevistas=[]; await persistir(); render(); }
