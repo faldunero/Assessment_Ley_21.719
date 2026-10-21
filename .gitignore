@@ -3,3 +3,4 @@ __pycache__/
 .DS_Store
 ~$*.xlsx
 .venv/
+simulacion/treziva_datos.json
